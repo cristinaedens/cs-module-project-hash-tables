@@ -11,6 +11,9 @@ class HashTableEntry:
 # Hash table can't have fewer than this many slots
 MIN_CAPACITY = 8
 
+class LinkedList:
+    def __init__(self):
+        self.head = None
 
 class HashTable:
     """
@@ -24,7 +27,7 @@ class HashTable:
         # Your code here
         self.capacity = MIN_CAPACITY
         self.count = 0
-        self.storage = [None] * self.capacity
+        self.storage = [LinkedList()] * self.capacity
 
 
     def get_num_slots(self):
@@ -47,7 +50,7 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        return self.count / self.capacity
+        return self.count / len(self.capacity)
 
     def fnv1(self, key):
         """
@@ -90,15 +93,24 @@ class HashTable:
         """
         # Your code here
         index = self.hash_index(key)
-        entry = HashTableEntry(key, value)
-        storage = self.storage[index]
-        self.count += 1
+        
+        # if LL is empty
+        if self.storage[index].head == None:
+            self.storage[index].head = HashTableEntry(key, value)
+            self.count += 1
+            return
 
-        if storage:
-            self.storage[index] = entry
-            self.storage[index].next = storage
         else:
-            self.storage[index] = entry
+            current = self.storage[index].head
+
+            while current.next:
+
+                if current.key == key:
+                    current.value = value
+                current = current.next
+
+            current.next = HashTableEntry(key, value)
+            self.count += 1
 
 
     def delete(self, key):
@@ -110,8 +122,21 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        self.put(key, None)
-        self.count -= 1
+        index = self.hash_index(key)
+        current = self.storage[index].head
+
+        if current.key == key:
+            self.storage[index].head = self.storage[index].head.next
+            self.count -= 1
+            return
+
+        while current.next:
+            prev = current
+            current = current.next
+            if current.key == key:
+                prev.next = current.next
+                self.count -= 1
+                return None
 
 
     def get(self, key):
@@ -124,11 +149,18 @@ class HashTable:
         """
         # Your code here
         index = self.hash_index(key)
-        storage = self.storage[index]
-        while storage:
-            if storage.key == key:
-                return storage.value
-            storage = storage.next
+        current = self.storage[index].head
+
+        if current == None:
+            return None
+
+        if current.key == key:
+            return current.value
+
+        while current.next:
+            current = current.next
+            if current.key == key:
+                return current.value
         return None
 
     def resize(self, new_capacity):
@@ -139,7 +171,25 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        self.capacity = new_capacity
+        new_list = [LinkedList()] * new_capacity
 
+        for i in self.storage:
+            current = i.head
+
+            while current is not None:
+                index = self.hash_index(current.key)
+
+                if new_list[index].head == None:
+                    new_list[index].head = HashTableEntry(current.key, current.value)
+                else:
+                    node = HashTableEntry(current.key, current.value)
+
+                    node.next = new_list[index].head
+
+                    new_list[index].head = node
+                current = current.next
+        self.storage = new_list
 
 
 if __name__ == "__main__":
